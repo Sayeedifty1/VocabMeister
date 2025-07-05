@@ -1,0 +1,20 @@
+Kommen - To come - আসা
+Laufen - To run - দৌড়ানো
+Essen - To eat - খাওয়া
+Trinken - To drink - পান করা
+Schlafen - To sleep - ঘুমানো
+Arbeiten - To work - কাজ করা
+Lernen - To learn - শিখা
+Schreiben - To write - লেখা
+Lesen - To read - পড়া
+Sprechen - To speak - কথা বলা
+Hören - To hear - শোনা
+Sehen - To see - দেখা
+Gehen - To go - যাওয়া
+Fahren - To drive - গাড়ি চালানো
+Fliegen - To fly - উড়া
+Schwimmen - To swim - সাঁতার কাটা
+Spielen - To play - খেলা
+Singen - To sing - গান গাওয়া
+Tanzen - To dance - নাচা
+Zeichnen - To draw - আঁকা 
