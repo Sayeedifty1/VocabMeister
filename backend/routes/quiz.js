@@ -21,14 +21,19 @@ router.get('/next', async (req, res) => {
       return res.status(404).json({ error: 'No vocabulary items found. Please upload some vocabulary first.' });
     }
 
-    // For better learning, prioritize words with more mistakes
-    // This ensures users practice difficult words more often
+    // For better learning, prioritize words with more mistakes and less practice
     const sortedVocabs = vocabs.sort((a, b) => {
       // First, prioritize words with mistakes
       if (a.mistakes !== b.mistakes) {
         return b.mistakes - a.mistakes;
       }
-      // Then, randomize among words with same mistake count
+      // Then, prioritize words that haven't been practiced recently
+      if (a.lastPracticed !== b.lastPracticed) {
+        if (!a.lastPracticed) return -1;
+        if (!b.lastPracticed) return 1;
+        return a.lastPracticed.getTime() - b.lastPracticed.getTime();
+      }
+      // Finally, randomize among words with same priority
       return Math.random() - 0.5;
     });
 
@@ -76,6 +81,146 @@ router.get('/next', async (req, res) => {
   }
 });
 
+// Get next card for Quiz 2 (swipe game)
+router.get('/next-card', async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    // Get all user's vocabulary
+    const vocabs = await prisma.vocab.findMany({
+      where: { userId }
+    });
+
+    if (vocabs.length === 0) {
+      return res.status(404).json({ error: 'No vocabulary items found. Please upload some vocabulary first.' });
+    }
+
+    // For Quiz 2, prioritize words that haven't been practiced recently
+    // and words with more mistakes (unknown words)
+    const sortedVocabs = vocabs.sort((a, b) => {
+      // First, prioritize words with mistakes (unknown words)
+      if (a.mistakes !== b.mistakes) {
+        return b.mistakes - a.mistakes;
+      }
+      // Then, prioritize words that haven't been practiced recently
+      if (a.lastPracticed !== b.lastPracticed) {
+        if (!a.lastPracticed) return -1;
+        if (!b.lastPracticed) return 1;
+        return a.lastPracticed.getTime() - b.lastPracticed.getTime();
+      }
+      // Finally, randomize among words with same priority
+      return Math.random() - 0.5;
+    });
+
+    // Select a random word from the vocabulary
+    const randomIndex = Math.floor(Math.random() * sortedVocabs.length);
+    const selectedVocab = sortedVocabs[randomIndex];
+
+    res.json({
+      card: {
+        id: selectedVocab.id,
+        german: selectedVocab.german,
+        english: selectedVocab.english,
+        bengali: selectedVocab.bengali,
+        mistakes: selectedVocab.mistakes,
+        practiceCount: selectedVocab.practiceCount,
+        lastPracticed: selectedVocab.lastPracticed
+      }
+    });
+  } catch (error) {
+    console.error('Next card error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Mark word as unknown (for Quiz 2)
+router.post('/mark-unknown', async (req, res) => {
+  try {
+    const { vocabId } = req.body;
+    const userId = req.session.userId;
+
+    if (!vocabId) {
+      return res.status(400).json({ error: 'Missing vocabId' });
+    }
+
+    // Get the vocab item
+    const vocab = await prisma.vocab.findFirst({
+      where: { 
+        id: vocabId,
+        userId 
+      }
+    });
+
+    if (!vocab) {
+      return res.status(404).json({ error: 'Vocabulary item not found' });
+    }
+
+    // Update the vocab item with unknown tracking
+    const updatedVocab = await prisma.vocab.update({
+      where: { id: vocabId },
+      data: { 
+        mistakes: { increment: 1 },
+        unknownCount: { increment: 1 },
+        practiceCount: { increment: 1 },
+        lastPracticed: new Date()
+      }
+    });
+
+    res.json({ 
+      message: 'Word marked as unknown',
+      updatedMistakes: updatedVocab.mistakes,
+      updatedUnknownCount: updatedVocab.unknownCount,
+      updatedPracticeCount: updatedVocab.practiceCount
+    });
+  } catch (error) {
+    console.error('Mark unknown error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Mark word as known (for Quiz 2)
+router.post('/mark-known', async (req, res) => {
+  try {
+    const { vocabId } = req.body;
+    const userId = req.session.userId;
+
+    if (!vocabId) {
+      return res.status(400).json({ error: 'Missing vocabId' });
+    }
+
+    // Get the vocab item
+    const vocab = await prisma.vocab.findFirst({
+      where: { 
+        id: vocabId,
+        userId 
+      }
+    });
+
+    if (!vocab) {
+      return res.status(404).json({ error: 'Vocabulary item not found' });
+    }
+
+    // Update the vocab item with known tracking
+    const updatedVocab = await prisma.vocab.update({
+      where: { id: vocabId },
+      data: { 
+        knownCount: { increment: 1 },
+        practiceCount: { increment: 1 },
+        lastPracticed: new Date()
+      }
+    });
+
+    res.json({ 
+      message: 'Word marked as known',
+      updatedKnownCount: updatedVocab.knownCount,
+      updatedPracticeCount: updatedVocab.practiceCount
+    });
+  } catch (error) {
+    console.error('Mark known error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Submit quiz answer
 router.post('/answer', async (req, res) => {
   try {
@@ -102,13 +247,23 @@ router.post('/answer', async (req, res) => {
     const correctAnswer = questionType === 'english' ? vocab.english : vocab.bengali;
     const isCorrect = answer.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
 
-    // Update mistakes count if wrong
-    if (!isCorrect) {
-      await prisma.vocab.update({
-        where: { id: vocabId },
-        data: { mistakes: { increment: 1 } }
-      });
+    // Update vocab item based on result
+    const updateData = {
+      practiceCount: { increment: 1 },
+      lastPracticed: new Date()
+    };
+
+    if (isCorrect) {
+      updateData.knownCount = { increment: 1 };
+    } else {
+      updateData.mistakes = { increment: 1 };
+      updateData.unknownCount = { increment: 1 };
     }
+
+    await prisma.vocab.update({
+      where: { id: vocabId },
+      data: updateData
+    });
 
     res.json({
       isCorrect,
@@ -133,12 +288,19 @@ router.get('/stats', async (req, res) => {
     const totalVocabs = vocabs.length;
     const totalMistakes = vocabs.reduce((sum, vocab) => sum + vocab.mistakes, 0);
     const wordsWithMistakes = vocabs.filter(v => v.mistakes > 0).length;
+    const totalPracticeCount = vocabs.reduce((sum, vocab) => sum + vocab.practiceCount, 0);
+    const totalKnownCount = vocabs.reduce((sum, vocab) => sum + vocab.knownCount, 0);
+    const totalUnknownCount = vocabs.reduce((sum, vocab) => sum + vocab.unknownCount, 0);
 
     res.json({
       totalVocabs,
       totalMistakes,
       wordsWithMistakes,
-      averageMistakes: totalVocabs > 0 ? (totalMistakes / totalVocabs).toFixed(2) : 0
+      totalPracticeCount,
+      totalKnownCount,
+      totalUnknownCount,
+      averageMistakes: totalVocabs > 0 ? (totalMistakes / totalVocabs).toFixed(2) : 0,
+      successRate: totalPracticeCount > 0 ? ((totalKnownCount / totalPracticeCount) * 100).toFixed(2) : 0
     });
   } catch (error) {
     console.error('Quiz stats error:', error);
