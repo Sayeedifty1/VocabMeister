@@ -46,6 +46,11 @@ const Stats = () => {
     )
   }
 
+  // Calculate combined statistics
+  const totalMistakes = (stats.totalQuiz1Mistakes || 0) + (stats.totalQuiz2UnknownCount || 0)
+  const totalAttempts = (stats.totalQuiz1Attempts || 0) + (stats.totalQuiz2Attempts || 0)
+  const overallSuccessRate = totalAttempts > 0 ? (((stats.totalQuiz1CorrectAnswers || 0) + (stats.totalQuiz2KnownCount || 0)) / totalAttempts * 100).toFixed(2) : 0
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Overview Cards */}
@@ -73,21 +78,7 @@ const Stats = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Mistakes</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalMistakes}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-orange-100">
-              <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Words with Mistakes</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.wordsWithMistakes}</p>
+              <p className="text-2xl font-semibold text-gray-900">{totalMistakes}</p>
             </div>
           </div>
         </div>
@@ -100,96 +91,114 @@ const Stats = () => {
               </svg>
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Average Mistakes</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.averageMistakes}</p>
+              <p className="text-sm font-medium text-gray-500">Overall Success Rate</p>
+              <p className="text-2xl font-semibold text-gray-900">{overallSuccessRate}%</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white shadow-lg rounded-lg p-6">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-purple-100">
+              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500">Total Practice</p>
+              <p className="text-2xl font-semibold text-gray-900">{stats.totalPracticeCount}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Most Mistaken Words */}
+      {/* Combined Mistakes Overview */}
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Most Mistaken Words</h2>
-          <p className="text-gray-600 mt-1">
-            Words you need to practice more (includes Quiz 1 mistakes and Quiz 2 unknown words)
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900">Combined Mistakes Overview</h2>
+          <p className="text-gray-600 mt-1">Total mistakes from both Quiz 1 and Quiz 2 combined</p>
         </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <p className="text-3xl font-bold text-red-600">{totalMistakes}</p>
+              <p className="text-sm text-gray-600">Total Mistakes</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Quiz 1: {stats.totalQuiz1Mistakes || 0} | Quiz 2: {stats.totalQuiz2UnknownCount || 0}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <p className="text-3xl font-bold text-blue-600">{totalAttempts}</p>
+              <p className="text-sm text-gray-600">Total Attempts</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Quiz 1: {stats.totalQuiz1Attempts || 0} | Quiz 2: {stats.totalQuiz2Attempts || 0}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <p className="text-3xl font-bold text-green-600">{overallSuccessRate}%</p>
+              <p className="text-sm text-gray-600">Overall Success Rate</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Combined performance across both quizzes
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {stats.mostMistakenWords.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-gray-500 text-lg mb-2">
-              Great job! No mistakes yet.
-            </p>
-            <p className="text-gray-400">
-              Keep practicing to maintain your perfect record!
-            </p>
+      {/* Quiz 1 Statistics */}
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900">Quiz 1 Statistics (Multiple Choice)</h2>
+          <p className="text-gray-600 mt-1">Performance in the traditional multiple choice quiz</p>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{stats.totalQuiz1Attempts || 0}</p>
+              <p className="text-sm text-gray-500">Total Attempts</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{stats.totalQuiz1CorrectAnswers || 0}</p>
+              <p className="text-sm text-gray-500">Correct Answers</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">{stats.totalQuiz1Mistakes || 0}</p>
+              <p className="text-sm text-gray-500">Mistakes</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-purple-600">{stats.wordsWithQuiz1Mistakes || 0}</p>
+              <p className="text-sm text-gray-500">Words with Mistakes</p>
+            </div>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Rank
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    German
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    English
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Bengali
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Mistakes
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Source
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {stats.mostMistakenWords.map((word, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        index === 0 ? 'bg-red-100 text-red-800' :
-                        index === 1 ? 'bg-orange-100 text-orange-800' :
-                        index === 2 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        #{index + 1}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {word.german}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {word.english}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {word.bengali}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                        {word.mistakes}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        word.mistakes > 1 ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {word.mistakes > 1 ? 'Quiz 1 + Quiz 2' : 'Quiz 2 Only'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        </div>
+      </div>
+
+      {/* Quiz 2 Statistics */}
+      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900">Quiz 2 Statistics (Swipe Game)</h2>
+          <p className="text-gray-600 mt-1">Performance in the swipe-based vocabulary review</p>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{stats.totalQuiz2Attempts || 0}</p>
+              <p className="text-sm text-gray-500">Total Attempts</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{stats.totalQuiz2KnownCount || 0}</p>
+              <p className="text-sm text-gray-500">Known Words</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">{stats.totalQuiz2UnknownCount || 0}</p>
+              <p className="text-sm text-gray-500">Unknown Words</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-orange-600">{stats.wordsWithQuiz2Unknown || 0}</p>
+              <p className="text-sm text-gray-500">Words Marked Unknown</p>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Learning Tips */}
@@ -199,14 +208,46 @@ const Stats = () => {
           <div className="bg-white rounded-lg p-4">
             <h4 className="font-semibold text-gray-900 mb-2">Quiz 1 Strategy</h4>
             <p className="text-gray-600 text-sm">
-              Use Quiz 1 for active recall practice. Focus on words with high mistake counts to improve retention.
+              Use Quiz 1 for active recall practice. Focus on words with high mistake counts to improve retention. 
+              Your success rate is {stats.quiz1SuccessRate || 0}% - keep practicing to improve!
             </p>
           </div>
           <div className="bg-white rounded-lg p-4">
             <h4 className="font-semibold text-gray-900 mb-2">Quiz 2 Strategy</h4>
             <p className="text-gray-600 text-sm">
-              Use Quiz 2 for quick vocabulary review. Mark unknown words to track what you need to study more.
+              Use Quiz 2 for quick vocabulary review. Mark unknown words to track what you need to study more. 
+              Your success rate is {stats.quiz2SuccessRate || 0}% - focus on unknown words!
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Insights */}
+      <div className="bg-white shadow-lg rounded-lg p-6">
+        <h3 className="text-xl font-bold text-gray-900 mb-4">Progress Insights</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">Average Quiz 1 Mistakes per Word</p>
+              <p className="text-sm text-gray-500">How many mistakes you make on average per word in Quiz 1</p>
+            </div>
+            <span className="text-2xl font-bold text-red-600">{stats.averageQuiz1Mistakes || 0}</span>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">Average Quiz 2 Unknown Marks per Word</p>
+              <p className="text-sm text-gray-500">How many times you mark words as unknown on average in Quiz 2</p>
+            </div>
+            <span className="text-2xl font-bold text-orange-600">{stats.averageQuiz2Unknown || 0}</span>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+              <p className="font-medium text-gray-900">Combined Mistakes per Word</p>
+              <p className="text-sm text-gray-500">Average mistakes across both quiz types per word</p>
+            </div>
+            <span className="text-2xl font-bold text-purple-600">
+              {stats.totalVocabs > 0 ? (totalMistakes / stats.totalVocabs).toFixed(2) : 0}
+            </span>
           </div>
         </div>
       </div>

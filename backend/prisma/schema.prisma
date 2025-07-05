@@ -19,17 +19,26 @@ model User {
 }
 
 model Vocab {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  german          String
-  english         String
-  bengali         String
-  userId          String   @db.ObjectId
-  user            User     @relation(fields: [userId], references: [id])
-  mistakes        Int      @default(0)
-  lastPracticed   DateTime?
-  practiceCount   Int      @default(0)
-  knownCount      Int      @default(0)
-  unknownCount    Int      @default(0)
-  createdAt       DateTime @default(now())
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  german                String
+  english               String
+  bengali               String
+  userId                String   @db.ObjectId
+  user                  User     @relation(fields: [userId], references: [id])
+  
+  // Quiz 1 (Multiple Choice) tracking
+  quiz1Mistakes         Int      @default(0)
+  quiz1CorrectAnswers   Int      @default(0)
+  quiz1Attempts         Int      @default(0)
+  
+  // Quiz 2 (Swipe Game) tracking
+  quiz2UnknownCount     Int      @default(0)
+  quiz2KnownCount       Int      @default(0)
+  quiz2Attempts         Int      @default(0)
+  
+  // General tracking
+  lastPracticed         DateTime?
+  practiceCount         Int      @default(0)
+  createdAt             DateTime @default(now())
   @@map("Vocab")
 } 
