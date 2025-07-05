@@ -21,9 +21,21 @@ router.get('/next', async (req, res) => {
       return res.status(404).json({ error: 'No vocabulary items found. Please upload some vocabulary first.' });
     }
 
-    // Select random vocab item
-    const randomIndex = Math.floor(Math.random() * vocabs.length);
-    const selectedVocab = vocabs[randomIndex];
+    // For better learning, prioritize words with more mistakes
+    // This ensures users practice difficult words more often
+    const sortedVocabs = vocabs.sort((a, b) => {
+      // First, prioritize words with mistakes
+      if (a.mistakes !== b.mistakes) {
+        return b.mistakes - a.mistakes;
+      }
+      // Then, randomize among words with same mistake count
+      return Math.random() - 0.5;
+    });
+
+    // Select from the top 70% of words (prioritizing difficult ones)
+    const selectionPool = sortedVocabs.slice(0, Math.ceil(sortedVocabs.length * 0.7));
+    const randomIndex = Math.floor(Math.random() * selectionPool.length);
+    const selectedVocab = selectionPool[randomIndex];
 
     // Randomly choose between English and Bengali translation
     const isEnglish = Math.random() > 0.5;
@@ -105,6 +117,31 @@ router.post('/answer', async (req, res) => {
     });
   } catch (error) {
     console.error('Answer error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get quiz statistics for the user
+router.get('/stats', async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    const vocabs = await prisma.vocab.findMany({
+      where: { userId }
+    });
+
+    const totalVocabs = vocabs.length;
+    const totalMistakes = vocabs.reduce((sum, vocab) => sum + vocab.mistakes, 0);
+    const wordsWithMistakes = vocabs.filter(v => v.mistakes > 0).length;
+
+    res.json({
+      totalVocabs,
+      totalMistakes,
+      wordsWithMistakes,
+      averageMistakes: totalVocabs > 0 ? (totalMistakes / totalVocabs).toFixed(2) : 0
+    });
+  } catch (error) {
+    console.error('Quiz stats error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

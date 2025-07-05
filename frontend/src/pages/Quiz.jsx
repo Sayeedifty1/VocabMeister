@@ -1,16 +1,37 @@
 import { useState, useEffect } from 'react'
 
 const Quiz = () => {
+  const [quizType, setQuizType] = useState('')
+  const [quizLength, setQuizLength] = useState(null)
   const [question, setQuestion] = useState(null)
   const [selectedAnswer, setSelectedAnswer] = useState('')
   const [result, setResult] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [currentQuestionNumber, setCurrentQuestionNumber] = useState(0)
+  const [totalQuestions, setTotalQuestions] = useState(0)
+  const [correctAnswers, setCorrectAnswers] = useState(0)
+  const [quizCompleted, setQuizCompleted] = useState(false)
+  const [quizResults, setQuizResults] = useState(null)
 
-  useEffect(() => {
-    loadNextQuestion()
-  }, [])
+  const handleQuizTypeSelect = (type) => {
+    setQuizType(type)
+    setQuizLength(null)
+    setQuestion(null)
+    setResult(null)
+    setCurrentQuestionNumber(0)
+    setCorrectAnswers(0)
+    setQuizCompleted(false)
+    setQuizResults(null)
+  }
+
+  const handleQuizLengthSelect = async (length) => {
+    setQuizLength(length)
+    setTotalQuestions(length)
+    setCurrentQuestionNumber(1)
+    await loadNextQuestion()
+  }
 
   const loadNextQuestion = async () => {
     setLoading(true)
@@ -59,6 +80,10 @@ const Quiz = () => {
 
       const data = await response.json()
       setResult(data)
+      
+      if (data.isCorrect) {
+        setCorrectAnswers(prev => prev + 1)
+      }
     } catch (error) {
       setError('Network error')
     } finally {
@@ -66,8 +91,159 @@ const Quiz = () => {
     }
   }
 
-  const handleNextQuestion = () => {
-    loadNextQuestion()
+  const handleNextQuestion = async () => {
+    if (currentQuestionNumber >= totalQuestions) {
+      // Quiz completed
+      const score = Math.round((correctAnswers / totalQuestions) * 100)
+      setQuizResults({
+        totalQuestions,
+        correctAnswers,
+        score,
+        completedAt: new Date().toLocaleString()
+      })
+      setQuizCompleted(true)
+    } else {
+      setCurrentQuestionNumber(prev => prev + 1)
+      await loadNextQuestion()
+    }
+  }
+
+  const startNewQuiz = () => {
+    setQuizType('')
+    setQuizLength(null)
+    setQuestion(null)
+    setResult(null)
+    setCurrentQuestionNumber(0)
+    setTotalQuestions(0)
+    setCorrectAnswers(0)
+    setQuizCompleted(false)
+    setQuizResults(null)
+    setError('')
+  }
+
+  // Quiz type selection screen
+  if (!quizType) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white shadow-lg rounded-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+            Choose Quiz Type
+          </h1>
+          
+          <div className="space-y-4">
+            <button
+              onClick={() => handleQuizTypeSelect('quiz1')}
+              className="w-full p-6 text-left border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all duration-200"
+            >
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Quiz 1</h3>
+              <p className="text-gray-600">Standard vocabulary quiz with multiple choice questions</p>
+            </button>
+            
+            <button
+              onClick={() => handleQuizTypeSelect('quiz2')}
+              className="w-full p-6 text-left border-2 border-gray-200 rounded-lg hover:border-gray-500 hover:bg-gray-50 transition-all duration-200 opacity-50 cursor-not-allowed"
+            >
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Quiz 2</h3>
+              <p className="text-gray-600">Coming soon...</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Quiz length selection screen
+  if (quizType && !quizLength) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white shadow-lg rounded-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+            Select Quiz Length
+          </h1>
+          
+          <div className="space-y-4">
+            <button
+              onClick={() => handleQuizLengthSelect(10)}
+              className="w-full p-6 text-left border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all duration-200"
+            >
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">10 Questions</h3>
+              <p className="text-gray-600">Quick quiz - perfect for a short study session</p>
+            </button>
+            
+            <button
+              onClick={() => handleQuizLengthSelect(15)}
+              className="w-full p-6 text-left border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all duration-200"
+            >
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">15 Questions</h3>
+              <p className="text-gray-600">Extended quiz - more comprehensive practice</p>
+            </button>
+          </div>
+          
+          <button
+            onClick={startNewQuiz}
+            className="mt-6 w-full bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 transition-colors"
+          >
+            Back to Quiz Selection
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Quiz completed screen
+  if (quizCompleted && quizResults) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white shadow-lg rounded-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+            Quiz Completed!
+          </h1>
+          
+          <div className="text-center space-y-6">
+            <div className="text-6xl font-bold text-blue-600">
+              {quizResults.score}%
+            </div>
+            
+            <div className="text-xl text-gray-600">
+              You got {quizResults.correctAnswers} out of {quizResults.totalQuestions} questions correct!
+            </div>
+            
+            <div className="bg-gray-100 rounded-lg p-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-semibold">Total Questions:</span> {quizResults.totalQuestions}
+                </div>
+                <div>
+                  <span className="font-semibold">Correct Answers:</span> {quizResults.correctAnswers}
+                </div>
+                <div>
+                  <span className="font-semibold">Score:</span> {quizResults.score}%
+                </div>
+                <div>
+                  <span className="font-semibold">Completed:</span> {quizResults.completedAt}
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <button
+                onClick={startNewQuiz}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Start New Quiz
+              </button>
+              
+              <button
+                onClick={() => window.location.href = '/vocabulary'}
+                className="w-full bg-gray-600 text-white px-6 py-3 rounded-md hover:bg-gray-700 transition-colors"
+              >
+                View Vocabulary
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -84,6 +260,12 @@ const Quiz = () => {
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           <p className="font-bold">Error:</p>
           <p>{error}</p>
+          <button
+            onClick={startNewQuiz}
+            className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     )
@@ -92,6 +274,24 @@ const Quiz = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white shadow-lg rounded-lg p-8">
+        {/* Quiz Progress */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-gray-600">
+              Question {currentQuestionNumber} of {totalQuestions}
+            </span>
+            <span className="text-sm font-medium text-gray-600">
+              Score: {correctAnswers}/{currentQuestionNumber - 1}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(currentQuestionNumber - 1) / totalQuestions * 100}%` }}
+            ></div>
+          </div>
+        </div>
+
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
           Vocabulary Quiz
         </h1>
@@ -168,7 +368,7 @@ const Quiz = () => {
                   onClick={handleNextQuestion}
                   className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                 >
-                  Next Question
+                  {currentQuestionNumber >= totalQuestions ? 'Finish Quiz' : 'Next Question'}
                 </button>
               )}
             </div>
