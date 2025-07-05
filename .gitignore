@@ -17,3 +17,7 @@ Thumbs.db
 # Editor configs
 .vscode/
 .idea/
+
+# Ignore node_modules in both frontend and backend
+frontend/node_modules/
+backend/node_modules/
