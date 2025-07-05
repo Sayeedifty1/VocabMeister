@@ -1,0 +1,14 @@
+{
+  "name": "vocabmeister",
+  "version": "1.0.0",
+  "description": "Vocabulary Learning App",
+  "scripts": {
+    "build": "cd backend && npm install && npx prisma generate",
+    "dev": "cd backend && npm run dev",
+    "start": "cd backend && npm start"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ]
+} 

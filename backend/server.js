@@ -16,8 +16,8 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   'http://localhost:5173', // Vite default port
   'http://localhost:3000', // Alternative local port
-  'https://your-frontend-domain.vercel.app', // Replace with your actual frontend domain
-  'https://vocabmaster.vercel.app', // Example frontend domain
+  'https://vocabmeister.vercel.app', // Your frontend domain
+  'https://vocabmeister-git-main-sayeedifty1.vercel.app', // Vercel preview URL
   process.env.FRONTEND_URL // Environment variable for frontend URL
 ].filter(Boolean);
 
@@ -29,6 +29,7 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -69,7 +70,8 @@ app.get('/api/health', (req, res) => {
     status: 'OK', 
     message: 'Vocabulary app backend is running',
     environment: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    cors: allowedOrigins
   });
 });
 
@@ -78,6 +80,7 @@ app.get('/', (req, res) => {
   res.json({ 
     message: 'Vocabulary Learning App Backend API',
     version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
     endpoints: {
       health: '/api/health',
       auth: '/api/auth',
