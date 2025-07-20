@@ -10,6 +10,7 @@ const VocabularyTable = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('word')
   const [sortOrder, setSortOrder] = useState('asc')
+  const [selectedSection, setSelectedSection] = useState('all');
 
   useEffect(() => {
     if (user) {
@@ -49,27 +50,14 @@ const VocabularyTable = () => {
     }
   }
 
-  const filteredAndSortedVocabularies = (vocabularies || [])
-    .filter(vocab => 
-      (vocab.german || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (vocab.english || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (vocab.bengali || '').toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      let aValue = a[sortBy]
-      let bValue = b[sortBy]
-      
-      if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase()
-        bValue = bValue.toLowerCase()
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1
-      } else {
-        return aValue < bValue ? 1 : -1
-      }
-    })
+  // Combine section and search filters
+  const filteredVocabs = vocabularies
+    .filter(vocab =>
+      (selectedSection === 'all' || vocab.section === selectedSection) &&
+      (vocab.german || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+  const sections = Array.from(new Set(vocabularies.map(v => v.section).filter(Boolean)));
 
   if (!user) {
     return (
@@ -137,45 +125,44 @@ const VocabularyTable = () => {
               className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-            <div>
-              <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-2">
-                Sort By
-              </label>
-              <select
-                id="sortBy"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="word">Word</option>
-                <option value="meaning">Meaning</option>
-                <option value="createdAt">Date Added</option>
-                <option value="practiceCount">Practice Count</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="sortOrder" className="block text-sm font-medium text-gray-700 mb-2">
-                Order
-              </label>
-              <select
-                id="sortOrder"
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                className="px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="asc">Ascending</option>
-                <option value="desc">Descending</option>
-              </select>
-            </div>
+          <div>
+            <label htmlFor="section" className="block text-sm font-medium text-gray-700 mb-2">
+              Section
+            </label>
+            <select
+              id="section"
+              value={selectedSection}
+              onChange={e => setSelectedSection(e.target.value)}
+              className="px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All</option>
+              {sections.map(section => (
+                <option key={section} value={section}>{section}</option>
+              ))}
+            </select>
           </div>
         </div>
+      </div>
+
+      {/* Section Filter Dropdown */}
+      <div className="mb-4">
+        <label className="mr-2 font-semibold">Filter by Section:</label>
+        <select
+          value={selectedSection}
+          onChange={e => setSelectedSection(e.target.value)}
+          className="border rounded px-2 py-1"
+        >
+          <option value="all">All</option>
+          {sections.map(section => (
+            <option key={section} value={section}>{section}</option>
+          ))}
+        </select>
       </div>
 
       {/* Results Count */}
       <div className="mb-4 sm:mb-6">
         <p className="text-sm sm:text-base text-gray-600">
-          Showing {filteredAndSortedVocabularies.length} of {vocabularies.length} words
+          Showing {filteredVocabs.length} of {vocabularies.length} words
         </p>
       </div>
 
@@ -188,14 +175,16 @@ const VocabularyTable = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">German</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">English</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bengali</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Section</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredAndSortedVocabularies.map((vocab, idx) => (
+              {filteredVocabs.map((vocab, idx) => (
                 <tr key={idx}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vocab.german}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vocab.english}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vocab.bengali}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vocab.section}</td>
                 </tr>
               ))}
             </tbody>
@@ -205,7 +194,7 @@ const VocabularyTable = () => {
 
       {/* Mobile/Tablet Cards */}
       <div className="lg:hidden space-y-4">
-        {filteredAndSortedVocabularies.map((vocab) => (
+        {filteredVocabs.map((vocab) => (
           <div key={vocab.id} className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
             <div className="flex justify-between items-start mb-3">
               <div className="flex-1">
@@ -233,7 +222,7 @@ const VocabularyTable = () => {
       </div>
 
       {/* Empty State */}
-      {filteredAndSortedVocabularies.length === 0 && (
+      {filteredVocabs.length === 0 && (
         <div className="text-center py-12">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />

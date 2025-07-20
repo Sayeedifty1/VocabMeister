@@ -23,14 +23,25 @@ router.post('/upload', async (req, res) => {
     for (const line of lines) {
       const parts = line.split(' - ').map(part => part.trim());
       
-      if (parts.length === 3) {
+      if (parts.length === 4) {
+        const [german, english, bengali, section] = parts;
+        if (german && english && bengali && section) {
+          vocabItems.push({
+            german,
+            english,
+            bengali,
+            section,
+            userId
+          });
+        }
+      } else if (parts.length === 3) {
         const [german, english, bengali] = parts;
-        
         if (german && english && bengali) {
           vocabItems.push({
             german,
             english,
             bengali,
+            section: null,
             userId
           });
         }
@@ -60,11 +71,16 @@ router.post('/upload', async (req, res) => {
 router.get('/list', async (req, res) => {
   try {
     const userId = req.query.userId;
+    const section = req.query.section;
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
     }
+    const where = { userId };
+    if (section) {
+      where.section = section;
+    }
     const vocabs = await prisma.vocab.findMany({
-      where: { userId },
+      where,
       orderBy: { createdAt: 'asc' }
     });
     res.json({ vocabs });

@@ -40,5 +40,6 @@ model Vocab {
   lastPracticed         DateTime?
   practiceCount         Int      @default(0)
   createdAt             DateTime @default(now())
+  section               String?  // New: Section number as string (optional)
   @@map("Vocab")
 } 
