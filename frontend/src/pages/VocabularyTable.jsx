@@ -59,6 +59,24 @@ const VocabularyTable = () => {
 
   const sections = Array.from(new Set(vocabularies.map(v => v.section).filter(Boolean)));
 
+// Sort: numeric sections first (ascending), then non-numeric (alphabetical)
+sections.sort((a, b) => {
+  const aNum = Number(a);
+  const bNum = Number(b);
+  const aIsNum = !isNaN(aNum);
+  const bIsNum = !isNaN(bNum);
+
+  if (aIsNum && bIsNum) {
+    return aNum - bNum;
+  } else if (aIsNum) {
+    return -1;
+  } else if (bIsNum) {
+    return 1;
+  } else {
+    return a.localeCompare(b);
+  }
+});
+
   if (!user) {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

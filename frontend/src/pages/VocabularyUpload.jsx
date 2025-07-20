@@ -213,7 +213,8 @@ const VocabularyUpload = () => {
                 onChange={handleManualInputChange}
                 placeholder="Enter your vocabulary here...
 Example:
-nfangen - To start - শুরু করা"
+German - English - Bengali - Section
+anfangen - To start - শুরু করা - 101"
                 rows={12}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
               />
