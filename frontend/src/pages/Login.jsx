@@ -10,6 +10,7 @@ const Login = () => {
   
   const { login } = useAuth()
   const navigate = useNavigate()
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -19,7 +20,7 @@ const Login = () => {
     const result = await login(username, password)
     
     if (result.success) {
-      navigate('/vocabulary')
+      navigate('/')
     } else {
       setError(result.error)
     }

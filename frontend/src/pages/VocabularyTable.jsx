@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+// import { useAuth } from '../contexts/AuthContext'
 
 const VocabularyTable = () => {
-  const { user } = useAuth()
+  // Get user from localStorage
+  const user = JSON.parse(localStorage.getItem('user'));
   const [vocabularies, setVocabularies] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -20,15 +21,17 @@ const VocabularyTable = () => {
 
   const fetchVocabularies = async () => {
     try {
-      const response = await fetch('/api/vocab', {
-        credentials: 'include'
-      })
-
+      if (!user || !user.id) {
+        setError('User not found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+      const response = await fetch(`/api/vocab/list?userId=${user.id}`);
       if (response.ok) {
-        const data = await response.json()
-        setVocabularies(data.vocabularies)
+        const data = await response.json();
+        setVocabularies(Array.isArray(data.vocabs) ? data.vocabs : []);
       } else {
-        setError('Failed to load vocabulary')
+        setError('Failed to load vocabulary');
       }
     } catch (error) {
       setError('Network error')
@@ -46,10 +49,11 @@ const VocabularyTable = () => {
     }
   }
 
-  const filteredAndSortedVocabularies = vocabularies
+  const filteredAndSortedVocabularies = (vocabularies || [])
     .filter(vocab => 
-      vocab.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vocab.meaning.toLowerCase().includes(searchTerm.toLowerCase())
+      (vocab.german || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (vocab.english || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (vocab.bengali || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       let aValue = a[sortBy]
@@ -181,77 +185,17 @@ const VocabularyTable = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('word')}
-                >
-                  <div className="flex items-center">
-                    Word
-                    {sortBy === 'word' && (
-                      <svg className={`ml-2 w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('meaning')}
-                >
-                  <div className="flex items-center">
-                    Meaning
-                    {sortBy === 'meaning' && (
-                      <svg className={`ml-2 w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('practiceCount')}
-                >
-                  <div className="flex items-center">
-                    Practice Count
-                    {sortBy === 'practiceCount' && (
-                      <svg className={`ml-2 w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('createdAt')}
-                >
-                  <div className="flex items-center">
-                    Date Added
-                    {sortBy === 'createdAt' && (
-                      <svg className={`ml-2 w-4 h-4 ${sortOrder === 'asc' ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">German</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">English</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bengali</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredAndSortedVocabularies.map((vocab) => (
-                <tr key={vocab.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{vocab.word}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-900">{vocab.meaning}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{vocab.practiceCount || 0}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {new Date(vocab.createdAt).toLocaleDateString()}
-                    </div>
-                  </td>
+              {filteredAndSortedVocabularies.map((vocab, idx) => (
+                <tr key={idx}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vocab.german}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vocab.english}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{vocab.bengali}</td>
                 </tr>
               ))}
             </tbody>

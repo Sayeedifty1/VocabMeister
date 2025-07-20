@@ -1,17 +1,21 @@
 const express = require('express');
 const prisma = require('../config/database');
-const authMiddleware = require('../middleware/auth');
+// const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
 // Apply auth middleware to all routes
-router.use(authMiddleware);
+// router.use(authMiddleware);
 
 // Get user statistics
 router.get('/', async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.query.userId;
     console.log('Stats requested for user:', userId);
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
 
     // Get all user's vocabulary
     const vocabs = await prisma.vocab.findMany({

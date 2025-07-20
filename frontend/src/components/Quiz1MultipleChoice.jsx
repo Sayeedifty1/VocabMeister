@@ -22,21 +22,28 @@ const Quiz1MultipleChoice = ({ quizLength, onBack }) => {
   }, [user])
 
   const fetchQuestions = async () => {
+    
     try {
-      const response = await fetch(`/api/quiz/quiz1?length=${quizLength}`, {
-        credentials: 'include'
-      })
-
+      // Get user from localStorage if not available from context
+      const localUser = user || JSON.parse(localStorage.getItem('user'));
+      console.log(localUser.id)
+      if (!localUser || !localUser.id) {
+        setError('User not found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+      const response = await fetch(`/api/quiz/quiz1?userId=${localUser.id}&length=${quizLength}`);
+      console.log(response)
       if (response.ok) {
-        const data = await response.json()
-        setQuestions(data.questions)
+        const data = await response.json();
+        setQuestions(data.questions);
       } else {
-        setError('Failed to load quiz questions')
+        setError('Failed to load quiz questions');
       }
     } catch (error) {
-      setError('Network error')
+      setError('Network error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -54,10 +61,13 @@ const Quiz1MultipleChoice = ({ quizLength, onBack }) => {
 
     // Submit answer to backend
     submitAnswer(currentQuestion.id, correct)
+    console.log(currentQuestion.id)
   }
 
   const submitAnswer = async (vocabId, isCorrect) => {
     try {
+      const localUser = user || JSON.parse(localStorage.getItem('user'));
+      if (!localUser || !localUser.id) return;
       await fetch('/api/quiz/quiz1/answer', {
         method: 'POST',
         headers: {
@@ -66,7 +76,9 @@ const Quiz1MultipleChoice = ({ quizLength, onBack }) => {
         credentials: 'include',
         body: JSON.stringify({
           vocabId,
-          isCorrect
+          answer: isCorrect ? 'correct' : 'incorrect', // or pass the actual answer if needed
+          questionType: currentQuestion.questionType, // pass the type if needed
+          userId: localUser.id
         })
       })
     } catch (error) {
@@ -183,6 +195,7 @@ const Quiz1MultipleChoice = ({ quizLength, onBack }) => {
   }
 
   const currentQuestion = questions[currentQuestionIndex]
+  console.log(currentQuestion)
 
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-6">
@@ -215,7 +228,7 @@ const Quiz1MultipleChoice = ({ quizLength, onBack }) => {
       <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-            What does "{currentQuestion.word}" mean?
+            What does "{currentQuestion.german}" mean?
           </h2>
         </div>
 
@@ -301,8 +314,8 @@ const Quiz1MultipleChoice = ({ quizLength, onBack }) => {
               isCorrect ? 'text-green-700' : 'text-red-700'
             }`}>
               {isCorrect 
-                ? `Great job! "${currentQuestion.word}" means "${currentQuestion.correctAnswer}"`
-                : `The correct answer is "${currentQuestion.correctAnswer}". "${currentQuestion.word}" means "${currentQuestion.correctAnswer}"`
+                ? `Great job! "${currentQuestion.german}" means "${currentQuestion.correctAnswer}"`
+                : `The correct answer is "${currentQuestion.correctAnswer}". "${currentQuestion.german}" means "${currentQuestion.correctAnswer}"`
               }
             </p>
           </div>

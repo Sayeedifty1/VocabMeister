@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+// import { useAuth } from '../contexts/AuthContext' // Removed as per edit hint
 
 const VocabularyUpload = () => {
-  const { user } = useAuth()
+  // Remove useAuth, get user from localStorage
+  // const { user } = useAuth()
+  const user = JSON.parse(localStorage.getItem('user'));
   const [file, setFile] = useState(null)
   const [manualInput, setManualInput] = useState('')
   const [uploadMethod, setUploadMethod] = useState('file')
@@ -32,24 +34,24 @@ const VocabularyUpload = () => {
     try {
       let response
 
-      if (uploadMethod === 'file' && file) {
-        const formData = new FormData()
-        formData.append('file', file)
-
-        response = await fetch('/api/vocab/upload', {
-          method: 'POST',
-          credentials: 'include',
-          body: formData
-        })
+      if (uploadMethod === 'file') {
+        setError('File upload is currently not supported. Please use manual entry.');
+        setLoading(false);
+        return;
       } else if (uploadMethod === 'manual' && manualInput.trim()) {
+        if (!user || !user.id) {
+          setError('User not found. Please log in again.');
+          setLoading(false);
+          return;
+        }
         response = await fetch('/api/vocab/upload', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          credentials: 'include',
           body: JSON.stringify({
-            content: manualInput
+            vocabularyText: manualInput,
+            userId: user.id
           })
         })
       } else {
@@ -211,9 +213,7 @@ const VocabularyUpload = () => {
                 onChange={handleManualInputChange}
                 placeholder="Enter your vocabulary here...
 Example:
-hello = greeting
-world = earth
-vocabulary = words"
+nfangen - To start - শুরু করা"
                 rows={12}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
               />

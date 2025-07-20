@@ -1,7 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -38,25 +36,6 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Session configuration optimized for serverless
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-super-secret-session-key',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.DATABASE_URL || 'mongodb://localhost:27017/vocabulary-app',
-    ttl: 24 * 60 * 60, // 1 day
-    autoRemove: 'native', // Enable automatic removal of expired sessions
-    touchAfter: 24 * 3600 // Only update session once per day
-  }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-    sameSite: 'lax'
-  }
-}));
 
 // Routes
 app.use('/api/auth', authRoutes);

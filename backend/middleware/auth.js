@@ -1,7 +1,11 @@
 const authMiddleware = (req, res, next) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: 'Authentication required' });
+  const userId = req.body.userId || req.query.userId;
+  
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required - userId missing' });
   }
+  
+  req.userId = userId;
   next();
 };
 

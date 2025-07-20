@@ -33,10 +33,6 @@ router.post('/register', async (req, res) => {
       }
     });
 
-    // Set session
-    req.session.userId = user.id;
-    req.session.username = user.username;
-
     res.json({ 
       message: 'User registered successfully',
       user: { id: user.id, username: user.username }
@@ -72,10 +68,6 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
-    // Set session
-    req.session.userId = user.id;
-    req.session.username = user.username;
-
     res.json({ 
       message: 'Login successful',
       user: { id: user.id, username: user.username }
@@ -88,26 +80,12 @@ router.post('/login', async (req, res) => {
 
 // Logout
 router.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Could not log out' });
-    }
-    res.json({ message: 'Logged out successfully' });
-  });
+  res.json({ message: 'Logged out successfully' });
 });
 
-// Check auth status
+// Check auth status - now just returns success since we use localStorage
 router.get('/me', (req, res) => {
-  if (req.session.userId) {
-    res.json({ 
-      user: { 
-        id: req.session.userId, 
-        username: req.session.username 
-      } 
-    });
-  } else {
-    res.status(401).json({ error: 'Not authenticated' });
-  }
+  res.json({ message: 'Auth check endpoint - use localStorage for user data' });
 });
 
 module.exports = router; 

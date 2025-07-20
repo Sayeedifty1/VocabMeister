@@ -11,7 +11,16 @@ const Stats = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/stats', {
+      // Get user from localStorage
+      const user = JSON.parse(localStorage.getItem('user'));
+      
+      if (!user || !user.id) {
+        setError('User not found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(`/api/stats?userId=${user.id}`, {
         credentials: 'include'
       })
 

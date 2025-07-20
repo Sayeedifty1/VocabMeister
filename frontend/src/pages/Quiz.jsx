@@ -155,7 +155,7 @@ const Quiz = () => {
           </h3>
           <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-md mx-auto">
             <button
-              onClick={() => setQuizLength(10)}
+              onClick={() => setQuizLength(2)}
               className={`p-4 sm:p-6 rounded-xl border-2 transition-all duration-300 ${
                 quizLength === 10
                   ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md'

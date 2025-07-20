@@ -21,7 +21,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route 
-            path="/upload" 
+            path="vocabulary/upload" 
             element={
               <ProtectedRoute>
                 <div className="container mx-auto px-4 py-8">
@@ -31,7 +31,7 @@ function App() {
             } 
           />
           <Route 
-            path="/vocabulary" 
+            path="/vocabulary/table" 
             element={
               <ProtectedRoute>
                 <div className="container mx-auto px-4 py-8">

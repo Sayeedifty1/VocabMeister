@@ -10,7 +10,7 @@ router.use(authMiddleware);
 // Get next quiz question
 router.get('/next', async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.userId;
 
     // Get all user's vocabulary
     const vocabs = await prisma.vocab.findMany({
@@ -84,7 +84,7 @@ router.get('/next', async (req, res) => {
 // Get next card for Quiz 2 (swipe game)
 router.get('/next-card', async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.userId;
 
     // Get all user's vocabulary
     const vocabs = await prisma.vocab.findMany({
@@ -139,7 +139,7 @@ router.get('/next-card', async (req, res) => {
 router.post('/mark-unknown', async (req, res) => {
   try {
     const { vocabId } = req.body;
-    const userId = req.session.userId;
+    const userId = req.userId;
 
     console.log('Marking word as unknown:', { vocabId, userId });
 
@@ -190,7 +190,7 @@ router.post('/mark-unknown', async (req, res) => {
 router.post('/mark-known', async (req, res) => {
   try {
     const { vocabId } = req.body;
-    const userId = req.session.userId;
+    const userId = req.userId;
 
     console.log('Marking word as known:', { vocabId, userId });
 
@@ -240,12 +240,11 @@ router.post('/mark-known', async (req, res) => {
 // Submit quiz answer (for Quiz 1)
 router.post('/answer', async (req, res) => {
   try {
-    const { vocabId, answer, questionType } = req.body;
-    const userId = req.session.userId;
+    const { vocabId, answer, questionType, userId } = req.body;
 
     console.log('Quiz answer submitted:', { vocabId, answer, questionType, userId });
 
-    if (!vocabId || !answer || !questionType) {
+    if (!vocabId || !answer || !questionType || !userId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -306,10 +305,67 @@ router.post('/answer', async (req, res) => {
   }
 });
 
+// GET /quiz1 - Return a set of quiz questions for Quiz 1
+router.get('/quiz1', async (req, res) => {
+  try {
+    const userId = req.query.userId;
+    const length = parseInt(req.query.length) || 10;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    // Get all user's vocabulary
+    const vocabs = await prisma.vocab.findMany({
+      where: { userId }
+    });
+    if (vocabs.length === 0) {
+      return res.status(404).json({ error: 'No vocabulary items found. Please upload some vocabulary first.' });
+    }
+    // Shuffle and select 'length' vocabs
+    const shuffled = vocabs.sort(() => 0.5 - Math.random());
+    const selectedVocabs = shuffled.slice(0, length);
+    // For each vocab, create a question
+    const questions = selectedVocabs.map(selectedVocab => {
+      const isEnglish = Math.random() > 0.5;
+      const correctAnswer = isEnglish ? selectedVocab.english : selectedVocab.bengali;
+      const questionType = isEnglish ? 'english' : 'bengali';
+      // Get 3 random wrong answers from other vocab items
+      const otherVocabs = vocabs.filter(v => v.id !== selectedVocab.id);
+      let wrongAnswers = [];
+      if (otherVocabs.length >= 3) {
+        const shuffledOthers = otherVocabs.sort(() => 0.5 - Math.random());
+        wrongAnswers = shuffledOthers.slice(0, 3).map(v => isEnglish ? v.english : v.bengali);
+      } else {
+        // If not enough other vocab items, add some generic answers
+        const genericAnswers = isEnglish 
+          ? ['To walk', 'To eat', 'To sleep']
+          : ['হাঁটা', 'খাওয়া', 'ঘুমানো'];
+        wrongAnswers = [
+          ...otherVocabs.map(v => isEnglish ? v.english : v.bengali),
+          ...genericAnswers.slice(0, 3 - otherVocabs.length)
+        ];
+      }
+      // Create answer options
+      const options = [...wrongAnswers, correctAnswer];
+      const shuffledOptions = options.sort(() => 0.5 - Math.random());
+      return {
+        id: selectedVocab.id,
+        german: selectedVocab.german,
+        questionType,
+        options: shuffledOptions,
+        correctAnswer
+      };
+    });
+    res.json({ questions });
+  } catch (error) {
+    console.error('Quiz1 error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get quiz statistics for the user
 router.get('/stats', async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.userId;
 
     const vocabs = await prisma.vocab.findMany({
       where: { userId }

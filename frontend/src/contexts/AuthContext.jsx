@@ -18,18 +18,16 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus()
   }, [])
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = () => {
     try {
-      const response = await fetch('/api/auth/me', {
-        credentials: 'include'
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setUser(data.user)
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        const userData = JSON.parse(storedUser)
+        setUser(userData)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+      localStorage.removeItem('user')
     } finally {
       setLoading(false)
     }
@@ -42,13 +40,14 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ username, password }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(data.user))
         setUser(data.user)
         return { success: true }
       } else {
@@ -66,13 +65,14 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ username, password }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(data.user))
         setUser(data.user)
         return { success: true }
       } else {
@@ -87,11 +87,12 @@ export const AuthProvider = ({ children }) => {
     try {
       await fetch('/api/auth/logout', {
         method: 'POST',
-        credentials: 'include',
       })
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
+      // Remove user data from localStorage
+      localStorage.removeItem('user')
       setUser(null)
     }
   }

@@ -10,11 +10,10 @@ router.use(authMiddleware);
 // Upload vocabulary
 router.post('/upload', async (req, res) => {
   try {
-    const { vocabularyText } = req.body;
-    const userId = req.session.userId;
+    const { vocabularyText, userId } = req.body;
 
-    if (!vocabularyText) {
-      return res.status(400).json({ error: 'Vocabulary text is required' });
+    if (!vocabularyText || !userId) {
+      return res.status(400).json({ error: 'Vocabulary text and userId are required' });
     }
 
     // Parse vocabulary text
@@ -60,13 +59,14 @@ router.post('/upload', async (req, res) => {
 // Get vocabulary list
 router.get('/list', async (req, res) => {
   try {
-    const userId = req.session.userId;
-
+    const userId = req.query.userId;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
     const vocabs = await prisma.vocab.findMany({
       where: { userId },
       orderBy: { createdAt: 'asc' }
     });
-
     res.json({ vocabs });
   } catch (error) {
     console.error('List error:', error);
