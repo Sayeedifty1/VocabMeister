@@ -463,4 +463,46 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// TEMP DEBUG: Get all vocabs with mistake/attempt stats for a user (or all users if no username), only those with mistakes/attempts > 0
+// router.get('/debug-mistakes/:username?', async (req, res) => {
+//   try {
+//     const username = req.params.username;
+//     let where = {};
+//     if (username) {
+//       // Find user by username
+//       const user = await prisma.user.findFirst({ where: { username } });
+//       if (!user) {
+//         return res.status(404).json({ error: 'User not found' });
+//       }
+//       where.userId = user.id;
+//     }
+//     // Only vocabs with at least one mistake/attempt > 0
+//     where.OR = [
+//       { quiz1Mistakes: { gt: 0 } },
+//       { quiz1Attempts: { gt: 0 } },
+//       { quiz2UnknownCount: { gt: 0 } },
+//       { quiz2Attempts: { gt: 0 } }
+//     ];
+//     const vocabs = await prisma.vocab.findMany({
+//       where,
+//       select: {
+//         id: true,
+//         userId: true,
+//         german: true,
+//         english: true,
+//         bengali: true,
+//         section: true,
+//         quiz1Mistakes: true,
+//         quiz1Attempts: true,
+//         quiz2UnknownCount: true,
+//         quiz2Attempts: true
+//       }
+//     });
+//     res.json({ vocabs });
+//   } catch (error) {
+//     console.error('Debug mistakes error:', error);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// });
+
 module.exports = router; 

@@ -64,11 +64,11 @@ const Quiz1MultipleChoice = ({ quizLength, onBack, section }) => {
     }
 
     // Submit answer to backend
-    submitAnswer(currentQuestion.id, correct)
+    submitAnswer(currentQuestion.id, correct, currentQuestion)
     console.log(currentQuestion.id)
   }
 
-  const submitAnswer = async (vocabId, isCorrect) => {
+  const submitAnswer = async (vocabId, isCorrect, currentQuestion) => {
     try {
       const localUser = user || JSON.parse(localStorage.getItem('user'));
       if (!localUser || !localUser.id) return;
@@ -81,7 +81,7 @@ const Quiz1MultipleChoice = ({ quizLength, onBack, section }) => {
         body: JSON.stringify({
           vocabId,
           answer: isCorrect ? 'correct' : 'incorrect', // or pass the actual answer if needed
-          questionType: currentQuestion.questionType, // pass the type if needed
+          questionType: currentQuestion ? currentQuestion.questionType : undefined, // pass the type if needed
           userId: localUser.id
         })
       })
