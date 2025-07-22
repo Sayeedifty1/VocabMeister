@@ -504,5 +504,6 @@ router.get('/stats', async (req, res) => {
 //     res.status(500).json({ error: 'Internal server error' });
 //   }
 // });
+// http://localhost:5000/api/quiz/debug-mistakes/Ifty
 
 module.exports = router; 
