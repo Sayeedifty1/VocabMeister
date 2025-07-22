@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
-const Quiz2Swipe = ({ quizLength, onBack }) => {
+const Quiz2Swipe = ({ quizLength, onBack, section }) => {
   const { user } = useAuth()
   const [cards, setCards] = useState([])
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
@@ -11,7 +11,7 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
   const [knownCount, setKnownCount] = useState(0)
   const [unknownCount, setUnknownCount] = useState(0)
   const [showMeaning, setShowMeaning] = useState(false)
-  
+
   const cardRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
@@ -28,20 +28,27 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
 
   const fetchCards = async () => {
     try {
-      const response = await fetch(`/api/quiz/quiz2?length=${quizLength}`, {
-        credentials: 'include'
-      })
-
+      const localUser = user || JSON.parse(localStorage.getItem('user'));
+      if (!localUser || !localUser.id) {
+        setError('User not found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+      let url = `/api/quiz/quiz2?userId=${localUser.id}&length=${quizLength}`;
+      if (section) {
+        url += `&section=${encodeURIComponent(section)}`;
+      }
+      const response = await fetch(url);
       if (response.ok) {
-        const data = await response.json()
-        setCards(data.cards)
+        const data = await response.json();
+        setCards(data.cards);
       } else {
-        setError('Failed to load quiz cards')
+        setError('Failed to load quiz cards');
       }
     } catch (error) {
-      setError('Network error')
+      setError('Network error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -61,15 +68,16 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
 
     // Submit to backend
     try {
-      await fetch('/api/quiz/quiz2/answer', {
+      const localUser = user || JSON.parse(localStorage.getItem('user'));
+      if (!localUser || !localUser.id) return;
+      await fetch('/api/quiz/mark-' + (isKnown ? 'known' : 'unknown'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        credentials: 'include',
         body: JSON.stringify({
           vocabId: currentCard.id,
-          isKnown
+          userId: localUser.id
         })
       })
     } catch (error) {
@@ -84,35 +92,31 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
       } else {
         setCurrentCardIndex(prev => prev + 1)
       }
-    }, isKnown ? 300 : 2000) // Show meaning longer for unknown words
+    }, isKnown ? 300 : 2000)
   }
 
   // Touch/Mouse handlers for swipe gestures
   const handleTouchStart = (e) => {
-    const touch = e.touches[0] || e
+    const touch = e.touches ? e.touches[0] : e
     setDragStart({ x: touch.clientX, y: touch.clientY })
     setIsDragging(true)
   }
 
   const handleTouchMove = (e) => {
     if (!isDragging) return
-    e.preventDefault()
-    
-    const touch = e.touches[0] || e
+    if (e.touches) e.preventDefault()
+    const touch = e.touches ? e.touches[0] : e
     const offsetX = touch.clientX - dragStart.x
     const offsetY = touch.clientY - dragStart.y
-    
     setDragOffset({ x: offsetX, y: offsetY })
   }
 
   const handleTouchEnd = () => {
     if (!isDragging) return
-    
     const threshold = 100
     if (Math.abs(dragOffset.x) > threshold) {
       handleSwipe(dragOffset.x > 0 ? 'right' : 'left')
     }
-    
     setIsDragging(false)
     setDragOffset({ x: 0, y: 0 })
   }
@@ -172,12 +176,10 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
   if (quizCompleted) {
     const totalCards = cards.length
     const knownPercentage = Math.round((knownCount / totalCards) * 100)
-    
     return (
       <div className="max-w-2xl mx-auto text-center p-4 sm:p-6">
         <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Quiz Completed!</h2>
-          
           <div className="mb-6 sm:mb-8">
             <div className="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
               {knownPercentage}%
@@ -186,7 +188,6 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
               You knew {knownCount} out of {totalCards} words
             </p>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8">
             <div className="bg-green-50 rounded-lg p-4">
               <div className="text-2xl sm:text-3xl font-bold text-green-600">{knownCount}</div>
@@ -197,7 +198,6 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
               <div className="text-sm sm:text-base text-orange-700">Unknown Words</div>
             </div>
           </div>
-
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               onClick={handleRestart}
@@ -238,7 +238,6 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
             Card {currentCardIndex + 1} of {cards.length}
           </div>
         </div>
-        
         <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
           <div 
             className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 sm:h-3 rounded-full transition-all duration-300"
@@ -246,7 +245,6 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
           ></div>
         </div>
       </div>
-
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-green-50 rounded-xl p-3 sm:p-4 text-center">
@@ -258,7 +256,6 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
           <div className="text-xs sm:text-sm text-orange-700">Unknown</div>
         </div>
       </div>
-
       {/* Card */}
       <div className="relative">
         <div
@@ -279,18 +276,16 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
         >
           <div className="text-center">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6">
-              {currentCard.word}
+              {currentCard.german}
             </h2>
-            
             {showMeaning && (
               <div className="mt-4 sm:mt-6 p-4 sm:p-6 bg-purple-50 rounded-xl border border-purple-200">
                 <h3 className="text-lg sm:text-xl font-semibold text-purple-800 mb-2">Meaning:</h3>
-                <p className="text-base sm:text-lg text-purple-700">{currentCard.meaning}</p>
+                <p className="text-base sm:text-lg text-purple-700">{currentCard.english} / {currentCard.bengali}</p>
               </div>
             )}
           </div>
         </div>
-
         {/* Swipe Indicators */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold opacity-0 transition-opacity duration-300">
@@ -301,7 +296,6 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
           </div>
         </div>
       </div>
-
       {/* Action Buttons */}
       <div className="flex justify-center gap-4 sm:gap-6 mt-6 sm:mt-8">
         <button
@@ -312,7 +306,6 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        
         <button
           onClick={() => handleSwipe('right')}
           className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition-colors"
@@ -322,7 +315,6 @@ const Quiz2Swipe = ({ quizLength, onBack }) => {
           </svg>
         </button>
       </div>
-
       {/* Instructions */}
       <div className="mt-6 sm:mt-8 text-center">
         <p className="text-sm sm:text-base text-gray-600">

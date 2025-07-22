@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
-const Quiz1MultipleChoice = ({ quizLength, onBack }) => {
+const Quiz1MultipleChoice = ({ quizLength, onBack, section }) => {
   const { user } = useAuth()
   const [questions, setQuestions] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -32,7 +32,11 @@ const Quiz1MultipleChoice = ({ quizLength, onBack }) => {
         setLoading(false);
         return;
       }
-      const response = await fetch(`/api/quiz/quiz1?userId=${localUser.id}&length=${quizLength}`);
+      let url = `/api/quiz/quiz1?userId=${localUser.id}&length=${quizLength}`;
+      if (section) {
+        url += `&section=${encodeURIComponent(section)}`;
+      }
+      const response = await fetch(url);
       console.log(response)
       if (response.ok) {
         const data = await response.json();

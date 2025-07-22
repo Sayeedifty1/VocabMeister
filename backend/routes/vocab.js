@@ -90,4 +90,30 @@ router.get('/list', async (req, res) => {
   }
 });
 
+// Get all unique sections for a user
+router.get('/sections', async (req, res) => {
+  try {
+    const userId = req.query.userId;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    // Get all vocabs for the user
+    const vocabs = await prisma.vocab.findMany({
+      where: { userId },
+      select: { section: true }
+    });
+    // Extract unique, non-null, non-empty sections
+    const sectionsSet = new Set(
+      vocabs
+        .map(v => v.section)
+        .filter(section => section && section.trim() !== '')
+    );
+    const sections = Array.from(sectionsSet).sort();
+    res.json({ sections });
+  } catch (error) {
+    console.error('Sections error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router; 

@@ -310,12 +310,17 @@ router.get('/quiz1', async (req, res) => {
   try {
     const userId = req.query.userId;
     const length = parseInt(req.query.length) || 10;
+    const section = req.query.section;
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
     }
-    // Get all user's vocabulary
+    // Get all user's vocabulary, filter by section if provided
+    const where = { userId };
+    if (section) {
+      where.section = section;
+    }
     const vocabs = await prisma.vocab.findMany({
-      where: { userId }
+      where
     });
     if (vocabs.length === 0) {
       return res.status(404).json({ error: 'No vocabulary items found. Please upload some vocabulary first.' });
@@ -358,6 +363,48 @@ router.get('/quiz1', async (req, res) => {
     res.json({ questions });
   } catch (error) {
     console.error('Quiz1 error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /quiz2 - Return a set of cards for Quiz 2 (swipe game)
+router.get('/quiz2', async (req, res) => {
+  try {
+    const userId = req.query.userId;
+    const length = parseInt(req.query.length) || 10;
+    const section = req.query.section;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+    // Get all user's vocabulary, filter by section if provided
+    const where = { userId };
+    if (section) {
+      where.section = section;
+    }
+    const vocabs = await prisma.vocab.findMany({
+      where
+    });
+    if (vocabs.length === 0) {
+      return res.status(404).json({ error: 'No vocabulary items found. Please upload some vocabulary first.' });
+    }
+    // Shuffle and select 'length' vocabs
+    const shuffled = vocabs.sort(() => 0.5 - Math.random());
+    const selectedVocabs = shuffled.slice(0, length);
+    // For each vocab, create a card
+    const cards = selectedVocabs.map(vocab => ({
+      id: vocab.id,
+      german: vocab.german,
+      english: vocab.english,
+      bengali: vocab.bengali,
+      quiz1Mistakes: vocab.quiz1Mistakes,
+      quiz2UnknownCount: vocab.quiz2UnknownCount,
+      quiz2KnownCount: vocab.quiz2KnownCount,
+      practiceCount: vocab.practiceCount,
+      lastPracticed: vocab.lastPracticed
+    }));
+    res.json({ cards });
+  } catch (error) {
+    console.error('Quiz2 error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

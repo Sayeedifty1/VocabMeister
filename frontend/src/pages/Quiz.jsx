@@ -1,14 +1,47 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Quiz1MultipleChoice from '../components/Quiz1MultipleChoice'
 import Quiz2Swipe from '../components/Quiz2Swipe'
+import { useAuth } from '../contexts/AuthContext'
 
 const Quiz = () => {
+  const { user } = useAuth ? useAuth() : { user: null }
   const [selectedQuiz, setSelectedQuiz] = useState('')
   const [quizLength, setQuizLength] = useState(10)
   const [quizStarted, setQuizStarted] = useState(false)
+  const [sections, setSections] = useState([])
+  const [selectedSection, setSelectedSection] = useState('')
+  const [loadingSections, setLoadingSections] = useState(true)
+  const [sectionError, setSectionError] = useState('')
+
+  useEffect(() => {
+    const fetchSections = async () => {
+      setLoadingSections(true)
+      setSectionError('')
+      try {
+        const localUser = user || JSON.parse(localStorage.getItem('user'))
+        if (!localUser || !localUser.id) {
+          setSectionError('Please log in to view your sections.')
+          setLoadingSections(false)
+          return
+        }
+        const res = await fetch(`/api/vocab/sections?userId=${localUser.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setSections(data.sections)
+        } else {
+          setSectionError('Failed to load sections.')
+        }
+      } catch (e) {
+        setSectionError('Network error.')
+      } finally {
+        setLoadingSections(false)
+      }
+    }
+    fetchSections()
+  }, [user])
 
   const handleStartQuiz = () => {
-    if (selectedQuiz) {
+    if (selectedQuiz && selectedSection) {
       setQuizStarted(true)
     }
   }
@@ -24,11 +57,13 @@ const Quiz = () => {
         {selectedQuiz === 'quiz1' ? (
           <Quiz1MultipleChoice 
             quizLength={quizLength} 
+            section={selectedSection}
             onBack={handleBackToSelection}
           />
         ) : (
           <Quiz2Swipe 
             quizLength={quizLength} 
+            section={selectedSection}
             onBack={handleBackToSelection}
           />
         )}
@@ -47,6 +82,35 @@ const Quiz = () => {
         </p>
       </div>
 
+      {/* Section Selection */}
+      <div className="mb-8 sm:mb-12">
+        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 text-center">Choose Section</h3>
+        {loadingSections ? (
+          <div className="text-center text-gray-500">Loading sections...</div>
+        ) : sectionError ? (
+          <div className="text-center text-red-500">{sectionError}</div>
+        ) : sections.length === 0 ? (
+          <div className="text-center text-gray-500">No sections found. Please upload vocabulary with sections.</div>
+        ) : (
+          <div className="flex flex-wrap justify-center gap-3">
+            {sections.map(section => (
+              <button
+                key={section}
+                onClick={() => setSelectedSection(section)}
+                className={`px-5 py-2 rounded-xl border-2 font-semibold transition-all duration-200 ${
+                  selectedSection === section
+                    ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-md'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300 hover:bg-purple-50'
+                }`}
+              >
+                {section}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quiz Type Selection */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-12">
         {/* Quiz 1 Card */}
         <div className={`relative p-6 sm:p-8 rounded-2xl border-2 transition-all duration-300 cursor-pointer ${
@@ -155,7 +219,7 @@ const Quiz = () => {
           </h3>
           <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-md mx-auto">
             <button
-              onClick={() => setQuizLength(2)}
+              onClick={() => setQuizLength(10)}
               className={`p-4 sm:p-6 rounded-xl border-2 transition-all duration-300 ${
                 quizLength === 10
                   ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md'
@@ -185,7 +249,7 @@ const Quiz = () => {
       )}
 
       {/* Start Button */}
-      {selectedQuiz && (
+      {selectedQuiz && selectedSection && (
         <div className="text-center">
           <button
             onClick={handleStartQuiz}
