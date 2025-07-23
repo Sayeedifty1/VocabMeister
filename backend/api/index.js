@@ -1,4 +1,4 @@
-const app = require('../server');
+const serverless = require('serverless-http');
+const app = require('../server'); // express app
 
-// Export the Express app for Vercel
-module.exports = app; 
+module.exports.handler = serverless(app); 
