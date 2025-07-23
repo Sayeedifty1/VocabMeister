@@ -27,7 +27,7 @@ const Navbar = () => {
                 </svg>
               </div>
               <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                VocabMaster
+              VocabMeister
               </span>
             </a>
           </div>

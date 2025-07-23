@@ -64,15 +64,15 @@ const Quiz1MultipleChoice = ({ quizLength, onBack, section }) => {
     }
 
     // Submit answer to backend
-    submitAnswer(currentQuestion.id, correct, currentQuestion)
+    submitAnswer(currentQuestion.id, answer, currentQuestion)
     console.log(currentQuestion.id)
   }
 
-  const submitAnswer = async (vocabId, isCorrect, currentQuestion) => {
+  const submitAnswer = async (vocabId, answer, currentQuestion) => {
     try {
       const localUser = user || JSON.parse(localStorage.getItem('user'));
       if (!localUser || !localUser.id) return;
-      await fetch('/api/quiz/quiz1/answer', {
+      await fetch('/api/quiz/answer', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -80,8 +80,8 @@ const Quiz1MultipleChoice = ({ quizLength, onBack, section }) => {
         credentials: 'include',
         body: JSON.stringify({
           vocabId,
-          answer: isCorrect ? 'correct' : 'incorrect', // or pass the actual answer if needed
-          questionType: currentQuestion ? currentQuestion.questionType : undefined, // pass the type if needed
+          answer, // send the actual answer string
+          questionType: currentQuestion ? currentQuestion.questionType : undefined,
           userId: localUser.id
         })
       })

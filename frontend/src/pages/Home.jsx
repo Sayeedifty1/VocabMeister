@@ -174,11 +174,11 @@ const Home = () => {
               <h3 className="text-white text-lg font-semibold mb-4">Upload Format</h3>
               <div className="bg-gray-800 rounded p-4 text-left">
                 <pre className="text-green-400 text-sm overflow-x-auto">
-{`Kommen - To come - আসা
-Laufen - To run - দৌড়ানো
-Essen - To eat - খাওয়া
-Trinken - To drink - পান করা
-Schlafen - To sleep - ঘুমানো`}
+{`Kommen - To come - আসা - 1 01 (section no)
+Laufen - To run - দৌড়ানো - 2 02
+Essen - To eat - খাওয়া - 3 03
+Trinken - To drink - পান করা - 4 04
+Schlafen - To sleep - ঘুমানো - 5 05`}
                 </pre>
               </div>
               <p className="text-gray-300 mt-4 text-sm">

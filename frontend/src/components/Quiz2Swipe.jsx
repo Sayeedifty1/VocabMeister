@@ -217,7 +217,8 @@ const Quiz2Swipe = ({ quizLength, onBack, section }) => {
     )
   }
 
-  const currentCard = cards[currentCardIndex]
+  const currentCard = cards[currentCardIndex];
+  if (!currentCard) return null;
   const progress = ((currentCardIndex + 1) / cards.length) * 100
 
   return (
